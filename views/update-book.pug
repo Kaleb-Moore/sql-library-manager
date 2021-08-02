@@ -1,7 +1,12 @@
 extends layout 
 block content 
   h1= title 
-  form(action="/books/" + book.id, method="POST")
+    if(errors)
+        h2.errors Oops an error occurred!
+        ul.errors
+          each error in errors
+            li=error.message
+  form(action="/books/" + book.id method="POST")
     p 
       label(for="title") Title 
       input(type="text" id="title" name="title" value=book.title)
@@ -15,10 +20,10 @@ block content
       label(for="year") Year
       input(type="text" id="year" name="year" value=book.year)
     p 
-      input(type="submit" value="Update Book")
+      input(type="submit" class="update-button button" value="Update Book")
 
   form(action="/books/"+ book.id +"/delete" method="POST" onsubmit="return confirm('Do you really want to delete this book?');")
     p 
       a.button(href="/books") Cancel 
     p 
-      input(type="submit" value="Delete Book")
+      input(type="submit" class="button" value="Delete Book")

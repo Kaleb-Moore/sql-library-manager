@@ -73,7 +73,7 @@ router.post(
 		try {
 			book = await Book.findByPk(req.params.id);
 			if (book) {
-				await Book.update(req.body);
+				await book.update(req.body);
 				res.redirect("/books");
 			} else {
 				res.sendStatus(404);
@@ -81,10 +81,11 @@ router.post(
 		} catch (error) {
 			if (error.name === "SequelizeValidationError") {
 				book = await Book.build(req.body);
-				res.render("new-book", {
+				book.id = req.params.id;
+				res.render("Update-book", {
 					book,
 					errors: error.errors,
-					title: "New Book",
+					title: "Update Book",
 				});
 			} else {
 				throw error;

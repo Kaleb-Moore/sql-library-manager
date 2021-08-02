@@ -7,6 +7,7 @@ var logger = require("morgan");
 const Book = require("./models").Book;
 
 var indexRouter = require("./routes/index");
+const errorRoutes = require("./routes/error");
 
 var app = express();
 
@@ -25,7 +26,6 @@ app.use("/", indexRouter);
 const sequelize = require("./models").sequelize;
 
 (async () => {
-	await sequelize.sync();
 	try {
 		await sequelize.authenticate();
 		console.log("Connection to the database successful!");
@@ -34,22 +34,10 @@ const sequelize = require("./models").sequelize;
 	}
 })();
 
-app.use((req, res, next) => {
-	const err = new Error("Not found");
-	err.status = 404;
-	next(err);
-});
+//Handles 404 errors
+app.use(errorRoutes.fourOneFourHandler);
 
-app.use((err, req, res, next) => {
-	if (err.status === 404) {
-		res.status(404);
-		res.render("page-not-found", { err });
-	} else {
-		err.message = err.message || "Something went wrong!";
-		res.status(err.status || 500);
-		res.render("error", { err });
-	}
-	console.log(err.status, err.message);
-});
+//Handles global errors
+app.use(errorRoutes.globalHandler);
 
 module.exports = app;
