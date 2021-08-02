@@ -4,8 +4,9 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 
+const Book = require("./models").Book;
+
 var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
 
 var app = express();
 
@@ -20,7 +21,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
-app.use("/users", usersRouter);
 
 const sequelize = require("./models").sequelize;
 
@@ -35,23 +35,21 @@ const sequelize = require("./models").sequelize;
 })();
 
 app.use((req, res, next) => {
-	console.log("calling 404");
 	const err = new Error("Not found");
 	err.status = 404;
-	res.render("page-not-found", { err });
 	next(err);
 });
 
-// app.use((err, req, res, next) => {
-// 	if (err.status === 404) {
-// 		res.status(404);
-// 		res.render("page-not-found", { err });
-// 	} else {
-// 		err.message = err.message || "Something went wrong!";
-// 		res.status(err.status || 500);
-// 		res.render("error", { err });
-// 	}
-// 	console.log(err.status, err.message);
-// });
+app.use((err, req, res, next) => {
+	if (err.status === 404) {
+		res.status(404);
+		res.render("page-not-found", { err });
+	} else {
+		err.message = err.message || "Something went wrong!";
+		res.status(err.status || 500);
+		res.render("error", { err });
+	}
+	console.log(err.status, err.message);
+});
 
 module.exports = app;
