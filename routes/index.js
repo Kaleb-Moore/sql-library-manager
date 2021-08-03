@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 const Book = require("../models").Book;
+const { Op } = require("sequelize");
 
 function asyncHandler(cb) {
 	return async (req, res, next) => {
@@ -20,8 +21,59 @@ router.get("/", (req, res) => {
 router.get(
 	"/books",
 	asyncHandler(async (req, res) => {
-		const books = await Book.findAll();
-		res.render("index", { books });
+		const page = parseInt(req.query.page);
+		!page || page <= 0 ? res.redirect("?page=1") : null;
+		const limit = 5;
+
+		const { count, rows } = await Book.findAndCountAll({
+			order: [["title", "ASC"]],
+			limit,
+			offset: (page - 1) * limit,
+		});
+
+		const pages = Math.ceil(count / limit);
+		page > pages ? res.redirect(`?page=${pages}`) : null;
+		let pageLinks = 1;
+		res.render("index", { books: rows, pages, pageLinks });
+	})
+);
+
+router.get(
+	"/books/search",
+	asyncHandler(async (req, res, next) => {
+		const term = req.query.term.toLowerCase();
+		const page = parseInt(req.query.page);
+		!page || page <= 0 ? res.redirect(`search?term=${term}&page=1`) : null;
+		const limit = 5;
+		const { count, rows } = await Book.findAndCountAll({
+			where: {
+				[Op.or]: [
+					{
+						title: { [Op.like]: `%${term}%` },
+					},
+					{
+						author: { [Op.like]: `%${term}%` },
+					},
+					{
+						genre: { [Op.like]: `%${term}%` },
+					},
+					{
+						year: { [Op.like]: `%${term}%` },
+					},
+				],
+			},
+			order: [["title", "ASC"]],
+			limit,
+			offset: (page - 1) * limit,
+		});
+		if (count > 0) {
+			let pageLinks = 1;
+			const pages = Math.ceil(count / limit);
+			page > pages ? res.redirect(`?term=${term}&pages=${pages}`) : null;
+			res.render("index", { books: rows, pages, pageLinks, term });
+		} else {
+			res.render("no-return", { term });
+		}
 	})
 );
 
@@ -56,12 +108,15 @@ router.post(
 
 router.get(
 	"/books/:id",
-	asyncHandler(async (req, res) => {
+	asyncHandler(async (req, res, next) => {
 		const book = await Book.findByPk(req.params.id);
 		if (book) {
 			res.render("update-book", { book, title: "Edit Book" });
 		} else {
-			res.sendStatus(404);
+			const err = new Error();
+			err.status = 404;
+			err.message = "Looks like that book doesn't exist.";
+			next(err);
 		}
 	})
 );

@@ -6,8 +6,8 @@ var logger = require("morgan");
 
 const Book = require("./models").Book;
 
-var indexRouter = require("./routes/index");
 const errorRoutes = require("./routes/error");
+var indexRouter = require("./routes/index");
 
 var app = express();
 
